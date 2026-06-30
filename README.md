@@ -106,3 +106,11 @@ Após carregar os dados no PostgreSQL, comecei a trabalhar nas análises explora
 **Tentativa 3 — agregações via SQL:** decidi deixar o PostgreSQL fazer o trabalho pesado, escrevendo queries com `GROUP BY` e `COUNT(*)` que agregam os dados direto no banco, trazendo para o pandas apenas o resultado já resumido (poucas linhas) em vez de dados brutos. O ganho de desempenho foi enorme: uma consulta que antes levava cerca de 1 hora e ainda terminava em erro passou a rodar em cerca de 1 minuto.
 
 **Lição aprendida:** para arquivos grandes, processamento agregado (`GROUP BY`/`COUNT`) deve ser feito no banco de dados, não no pandas — o Postgres é otimizado para isso, e trafegar/processar milhões de linhas brutas em memória Python não escala.
+
+## Visualizações
+
+Comecei a orquestrar as visualizações utilizando `matplotlib`. A primeira tentativa foi visualizar a divisão de devedores entre `PRINCIPAL`, `CORRESPONSAVEL` e `SOLIDARIO` com um gráfico de barras simples (`plt.bar`). Ficou inviável: `SOLIDARIO` é tão menor que os outros dois tipos que sua barra fica praticamente invisível na escala linear, e a visualização como um todo ficou pouco intuitiva.
+
+![Quantidade de devedores por tipo](assets/QuantidadeDevedoresPorTipo.png)
+
+A solução foi aplicar escala logarítmica no eixo Y (`plt.yscale("log")`) para que `SOLIDARIO` ficasse visível ao lado dos outros tipos, além de anotar o valor exato e o percentual de cada barra com `plt.text()`, já que a escala log distorce a percepção visual das proporções reais.

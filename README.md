@@ -94,3 +94,15 @@ A tentativa inicial era carregar os 6 arquivos de uma vez com `pd.concat()`. Iss
 - [ ] Automatizar o download e extração do ZIP da fonte
 - [ ] Criar índices no PostgreSQL para otimizar consultas
 - [ ] Agendar execução periódica (ex: cron job trimestral, seguindo o calendário da PGFN)
+
+## Análise dos dados
+
+Após carregar os dados no PostgreSQL, comecei a trabalhar nas análises exploratórias (`src/analise.py`). O tamanho do arquivo (42 milhões de linhas) trouxe desafios de performance que mudaram bastante a abordagem:
+
+**Tentativa 1 — trazer a tabela inteira:** a primeira ideia foi simplesmente trazer todos os 42 milhões de linhas para o pandas com `SELECT *`. Inviável — travou.
+
+**Tentativa 2 — amostragem com pandas:** reduzi para uma amostra com `SELECT * ... ORDER BY RANDOM() LIMIT 100000`, usando `RANDOM()` para que a amostra fosse mais representativa do que simplesmente pegar as primeiras 100.000 linhas. Mesmo limitando a 100.000 linhas, o processamento em pandas (filtros e `groupby` em memória) continuou inviável.
+
+**Tentativa 3 — agregações via SQL:** decidi deixar o PostgreSQL fazer o trabalho pesado, escrevendo queries com `GROUP BY` e `COUNT(*)` que agregam os dados direto no banco, trazendo para o pandas apenas o resultado já resumido (poucas linhas) em vez de dados brutos. O ganho de desempenho foi enorme: uma consulta que antes levava cerca de 1 hora e ainda terminava em erro passou a rodar em cerca de 1 minuto.
+
+**Lição aprendida:** para arquivos grandes, processamento agregado (`GROUP BY`/`COUNT`) deve ser feito no banco de dados, não no pandas — o Postgres é otimizado para isso, e trafegar/processar milhões de linhas brutas em memória Python não escala.

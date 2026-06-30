@@ -3,7 +3,7 @@ from src.transform import transformar
 from src.load import carregar
 import glob
 
-arquivos = glob.glob("C:/Nao_Providenciario/*.csv")
+arquivos = glob.glob("C:/Nao_Previdenciario/*.csv")
 for i, arquivo in enumerate(arquivos):
     df = extrair_arquivo(arquivo)
     df = transformar(df)

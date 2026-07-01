@@ -114,3 +114,11 @@ Comecei a orquestrar as visualizações utilizando `matplotlib`. A primeira tent
 ![Quantidade de devedores por tipo](assets/QuantidadeDevedoresPorTipo.png)
 
 A solução foi aplicar escala logarítmica no eixo Y (`plt.yscale("log")`) para que `SOLIDARIO` ficasse visível ao lado dos outros tipos, além de anotar o valor exato e o percentual de cada barra com `plt.text()`, já que a escala log distorce a percepção visual das proporções reais.
+
+![Quantidade de devedores por UF](assets/devedorPorUf.png)
+
+Outro gráfico simples: quantidade de devedores por UF. Aqui o desafio foi outro — com 27 categorias no eixo X, os rótulos dos valores em cima das barras (`plt.text()`) começaram a se sobrepor. A solução foi reduzir o `fontsize` e aplicar uma leve rotação (`rotation=10`) nos textos.
+
+![Tipo devedor por UF](assets/tipoDevedorPorUf.png)
+
+Para cruzar duas variáveis categóricas (UF e tipo de pessoa, PF/PJ), um `plt.bar` simples não funciona — cada UF passaria a ter dois valores concorrendo pela mesma posição no eixo X. A solução foi um gráfico de **barras agrupadas**: os dados são pivotados com `DataFrame.pivot()` (uma coluna por tipo de pessoa) e cada grupo de barras é desenhado com um deslocamento (`x - largura/2` e `x + largura/2`) para ficarem lado a lado sem se sobrepor. Também foi necessário reaplicar a escala logarítmica no eixo Y, já que a proporção entre PF e PJ varia bastante entre estados.

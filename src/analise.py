@@ -80,6 +80,7 @@ query_tipo_devedor_por_uf = """
     SELECT "UF_DEVEDOR", "TIPO_PESSOA", COUNT(*) as total
     FROM divida_ativa
     GROUP BY "UF_DEVEDOR","TIPO_PESSOA"
+    ORDER BY total DESC
 """
 tipoDevedor_UF = pd.read_sql(query_tipo_devedor_por_uf,engine)
 pivot =tipoDevedor_UF.pivot(index="UF_DEVEDOR", columns="TIPO_PESSOA",values="total")

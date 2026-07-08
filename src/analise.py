@@ -1,25 +1,14 @@
+# %%
 from load import abrirConexao
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
 engine = abrirConexao()
 
 query_column_name = """
     SELECT column_name
     FROM information_schema.columns
     WHERE table_name = 'divida_ativa'
-"""
-query_devedor_tipo = """
-    SELECT "TIPO_DEVEDOR", COUNT(*) AS total
-    FROM divida_ativa
-    GROUP BY "TIPO_DEVEDOR"
-"""
-query_devedor_uf = """
-    SELECT "UF_DEVEDOR", COUNT(*) AS total
-    FROM divida_ativa
-    GROUP BY "UF_DEVEDOR"
-    ORDER BY total DESC
 """
 query_valor_medio_uf = """
     SELECT "UF_DEVEDOR", AVG("VALOR_CONSOLIDADO") AS valor_medio
@@ -32,14 +21,14 @@ query_valor_medio_tipo_pessoa = """
     GROUP BY "TIPO_PESSOA"
 """
 colunas = pd.read_sql(query_column_name,engine)
-devedorPorTipo = pd.read_sql(query_devedor_tipo,engine)
-devedorPorUf = pd.read_sql(query_devedor_uf,engine)
-
-print(colunas)
-print(devedorPorTipo)
-print(devedorPorUf["UF_DEVEDOR"].unique())
 
 #Grafico de barras para quantidade de devedores por tipo
+query_devedor_tipo = """
+    SELECT "TIPO_DEVEDOR", COUNT(*) AS total
+    FROM divida_ativa
+    GROUP BY "TIPO_DEVEDOR"
+"""
+devedorPorTipo = pd.read_sql(query_devedor_tipo,engine)
 total_geral = devedorPorTipo["total"].sum()
 bars = plt.bar(devedorPorTipo["TIPO_DEVEDOR"], devedorPorTipo["total"])
 for bar in bars:
@@ -59,6 +48,14 @@ plt.yscale("log")
 plt.show()
 
 #Grafico para visualização da quantidade de devedores por UF
+query_devedor_uf = """
+    SELECT "UF_DEVEDOR", COUNT(*) AS total
+    FROM divida_ativa
+    GROUP BY "UF_DEVEDOR"
+    ORDER BY total DESC
+"""
+devedorPorUf = pd.read_sql(query_devedor_uf,engine)
+
 bars = plt.bar(devedorPorUf["UF_DEVEDOR"], devedorPorUf["total"])
 for bar in bars:
     altura = bar.get_height()
@@ -80,7 +77,6 @@ query_tipo_devedor_por_uf = """
     SELECT "UF_DEVEDOR", "TIPO_PESSOA", COUNT(*) as total
     FROM divida_ativa
     GROUP BY "UF_DEVEDOR","TIPO_PESSOA"
-    ORDER BY total DESC
 """
 tipoDevedor_UF = pd.read_sql(query_tipo_devedor_por_uf,engine)
 pivot =tipoDevedor_UF.pivot(index="UF_DEVEDOR", columns="TIPO_PESSOA",values="total")
@@ -95,4 +91,18 @@ plt.ylabel("Total de devedores")
 plt.ticklabel_format(style="plain", axis="y")
 plt.yscale("log")
 plt.legend()
+plt.show()
+#Analisar  inscrições por ano
+query_inscricao_por_ano="""
+    SELECT
+        EXTRACT(YEAR FROM DATA_INSCRICAO) AS ano,
+        COUNT(*) AS quantidade
+    FROM divida_ativa
+    GROUP BY ano
+    ORDER BY ano;
+"""
+inscricaoAno = pd.read_sql(query_inscricao_por_ano,engine)
+plt.bar(inscricaoAno["ano"], inscricaoAno["quantidade"])
+plt.xlabel("Anos")
+plt.ylabel("Quantidade")
 plt.show()

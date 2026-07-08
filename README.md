@@ -89,11 +89,19 @@ A tentativa inicial era carregar os 6 arquivos de uma vez com `pd.concat()`. Iss
 
 ## O que falta
 
+**Pipeline**
 - [ ] Adicionar logs para acompanhar o progresso do pipeline (ex: `logging`)
 - [ ] Tratar erros por arquivo — se um falhar, continuar nos demais
 - [ ] Automatizar o download e extração do ZIP da fonte
 - [ ] Criar índices no PostgreSQL para otimizar consultas
 - [ ] Agendar execução periódica (ex: cron job trimestral, seguindo o calendário da PGFN)
+
+**Próximas análises**
+- [ ] Taxa de inadimplência relativa por UF (cruzar com população/PIB via IBGE)
+- [ ] Tempo de inscrição em dívida ativa por tipo de devedor (PF vs PJ)
+- [ ] Cruzar `INDICADOR_AJUIZADO` com valor da dívida, UF e tipo de devedor
+- [ ] Modelo simples de classificação (scikit-learn) para prever `INDICADOR_AJUIZADO`
+- [ ] Investigar a queda aparente de inscrições em 2020 e 2025/2026 (possível efeito de dados incompletos, não uma tendência real)
 
 ## Análise dos dados
 
@@ -122,3 +130,54 @@ Outro gráfico simples: quantidade de devedores por UF. Aqui o desafio foi outro
 ![Tipo devedor por UF](assets/tipoDevedorPorUf.png)
 
 Para cruzar duas variáveis categóricas (UF e tipo de pessoa, PF/PJ), um `plt.bar` simples não funciona — cada UF passaria a ter dois valores concorrendo pela mesma posição no eixo X. A solução foi um gráfico de **barras agrupadas**: os dados são pivotados com `DataFrame.pivot()` (uma coluna por tipo de pessoa) e cada grupo de barras é desenhado com um deslocamento (`x - largura/2` e `x + largura/2`) para ficarem lado a lado sem se sobrepor. Também foi necessário reaplicar a escala logarítmica no eixo Y, já que a proporção entre PF e PJ varia bastante entre estados.
+
+![Inscrições por ano](assets/inscricoesPorAno.png)
+
+Análise temporal: quantidade de inscrições em dívida ativa por ano, extraindo o ano de `DATA_INSCRICAO` com `EXTRACT(YEAR FROM ...)` e agrupando no próprio SQL. Há um crescimento constante até 2024, seguido de queda em 2025 e 2026 — provavelmente não é uma queda real, e sim efeito de os dados de 2026 (ano corrente) ainda estarem incompletos. Fica como ponto de atenção para não interpretar isso como uma tendência de queda real sem investigar melhor a janela de corte dos dados.
+
+### Concentração da dívida ativa
+
+Uma das perguntas mais relevantes sobre dívida ativa não é só "quanto se deve", mas "quem deve": a dívida está pulverizada entre muitos devedores pequenos, ou concentrada em poucos grandes devedores?
+
+Como cada linha da tabela é uma dívida (não um devedor), o primeiro passo foi agregar o valor total por `CPF_CNPJ` usando uma CTE (`WITH ... AS (...)`), e só então aplicar window functions (`SUM(...) OVER(ORDER BY ...)`, `ROW_NUMBER() OVER(...)`, `COUNT(*) OVER()`) para calcular o percentual acumulado de valor e de devedores, tudo processado dentro do PostgreSQL:
+
+```sql
+WITH divida_por_devedor AS (
+    SELECT "CPF_CNPJ", SUM("VALOR_CONSOLIDADO") AS valor_total_devedor
+    FROM divida_ativa
+    GROUP BY "CPF_CNPJ"
+)
+SELECT
+    "CPF_CNPJ", valor_total_devedor,
+    ROW_NUMBER() OVER(ORDER BY valor_total_devedor DESC) AS posicao,
+    SUM(valor_total_devedor) OVER(ORDER BY valor_total_devedor DESC)
+        / SUM(valor_total_devedor) OVER() AS pct_valor_acumulado,
+    ROW_NUMBER() OVER(ORDER BY valor_total_devedor DESC)::float
+        / COUNT(*) OVER() AS pct_devedores
+FROM divida_por_devedor
+ORDER BY valor_total_devedor DESC;
+```
+
+O resultado foi plotado como uma **curva de Lorenz** — % de devedores no eixo X (do maior para o menor) contra % do valor acumulado no eixo Y, comparada com uma diagonal de referência que representaria uma distribuição perfeitamente igualitária:
+
+![Concentração da dívida ativa](assets/output.png)
+
+A curva mostra concentração extrema: uma fração muito pequena dos devedores já responde por praticamente todo o valor total da dívida ativa.
+
+### Quem são os maiores devedores
+
+Com a concentração confirmada, o passo seguinte foi identificar quem está no topo — trazendo `CPF_CNPJ` e `NOME_DEVEDOR` dos 20 maiores valores agregados:
+
+```sql
+SELECT "CPF_CNPJ", "NOME_DEVEDOR", SUM("VALOR_CONSOLIDADO") AS valor_total_devedor
+FROM divida_ativa
+GROUP BY "CPF_CNPJ", "NOME_DEVEDOR"
+ORDER BY valor_total_devedor DESC
+LIMIT 20;
+```
+
+O topo do ranking é dominado por grandes empresas e estatais — **Petrobras** e **Vale** aparecem em 1º e 2º lugar, com valores consolidados na casa de dezenas de bilhões de reais, provavelmente refletindo grandes disputas tributárias de longo prazo (muitas em litígio judicial) em vez de inadimplência simples.
+
+O ranking também revelou um cluster de grupo econômico: **Roberto, Paulo e Patricia Ramenzoni** (pessoas físicas, com CPF mascarado pela própria fonte de dados) aparecem ao lado de empresas do mesmo grupo (`Indústrias de Papel R. Ramenzoni SA`, `CINAP — Comércio e Indústria Nordestina`), sugerindo redirecionamento de dívida da pessoa jurídica aos sócios — algo que só fica visível olhando os nomes, não apenas os CNPJs isolados.
+
+**Observação sobre privacidade:** CNPJs aparecem completos (dado público), mas CPFs de pessoa física já vêm mascarados na fonte oficial (ex: `XXX166.108XX`) — a anonimização é feita pela própria PGFN antes da disponibilização dos dados abertos.

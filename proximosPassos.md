@@ -2,7 +2,7 @@
 
 ## 1. Perguntas de negócio mais específicas
 - [ ] Taxa de inadimplência relativa por UF (cruzar com dado externo de população/PIB, ex. IBGE)
-- [ ] Concentração de dívida: qual % do valor total está nos maiores devedores (curva de Pareto/Lorenz)
+- [x] Concentração de dívida: qual % do valor total está nos maiores devedores (curva de Pareto/Lorenz)
 - [ ] Tempo de inscrição em dívida ativa por tipo de devedor (PF vs PJ)
 
 ## 2. Ajuizamento como variável de interesse

@@ -87,21 +87,6 @@ A tentativa inicial era carregar os 6 arquivos de uma vez com `pd.concat()`. Iss
 | `NUMERO_INSCRICAO` | float64 | str | É um código identificador, não um valor numérico |
 | Colunas de texto | object | object | Aplicado `.strip()` para remover espaços nas bordas |
 
-## O que falta
-
-**Pipeline**
-- [ ] Adicionar logs para acompanhar o progresso do pipeline (ex: `logging`)
-- [ ] Tratar erros por arquivo — se um falhar, continuar nos demais
-- [ ] Automatizar o download e extração do ZIP da fonte
-- [ ] Criar índices no PostgreSQL para otimizar consultas
-- [ ] Agendar execução periódica (ex: cron job trimestral, seguindo o calendário da PGFN)
-
-**Próximas análises**
-- [ ] Taxa de inadimplência relativa por UF (cruzar com população/PIB via IBGE)
-- [ ] Tempo de inscrição em dívida ativa por tipo de devedor (PF vs PJ)
-- [ ] Cruzar `INDICADOR_AJUIZADO` com valor da dívida, UF e tipo de devedor
-- [ ] Modelo simples de classificação (scikit-learn) para prever `INDICADOR_AJUIZADO`
-- [ ] Investigar a queda aparente de inscrições em 2020 e 2025/2026 (possível efeito de dados incompletos, não uma tendência real)
 
 ## Análise dos dados
 

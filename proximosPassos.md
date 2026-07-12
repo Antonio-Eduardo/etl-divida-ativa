@@ -9,16 +9,7 @@
 - [ ] Analisar relação entre ajuizamento e valor da dívida, UF, tipo de devedor
 - [ ] Base para uma futura análise preditiva (o que se associa a uma dívida ser ajuizada?)
 
-## 3. Qualidade de dados como narrativa
-- [ ] Documentar decisões de tratamento como parte da análise (não só anexo técnico)
-- [ ] Reforçar o pipeline de ETL como parte do storytelling do projeto
-
-## 4. Modelagem leve
+## 3. Modelagem leve
 - [ ] Modelo simples de classificação (scikit-learn) para prever `INDICADOR_AJUIZADO`
 - [ ] Usar valor, UF, tipo de devedor como features
 - [ ] Reportar métricas mesmo que modestas — mostrar domínio do fluxo preditivo
-
-## 5. Organização e apresentação
-- [ ] Consolidar achados em notebook ou README com storytelling (3-4 insights principais)
-- [ ] Revisar consistência visual dos gráficos (títulos, formatação de eixo)
-- [ ] Investigar dados truncados/incompletos (ex: 2020 e 2026 no gráfico de inscrições por ano)

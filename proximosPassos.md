@@ -1,4 +1,4 @@
-# Próximos Passos — Análise Dívida Ativa
+# Próximos Passos
 
 ## 1. Perguntas de negócio mais específicas
 - [ ] Taxa de inadimplência relativa por UF (cruzar com dado externo de população/PIB, ex. IBGE)
